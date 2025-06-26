@@ -3,6 +3,7 @@
 <head>
   <title>Thunkable List Viewer</title>
   <meta charset="UTF-8">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
     body { font-family: sans-serif; padding: 20px; }
     #list { margin-top: 20px; }
@@ -12,33 +13,36 @@
 <body>
   <h1>Received List</h1>
   <pre id="list">Waiting for data...</pre>
-  <button onclick="downloadList()">Download List</button>
+  <button onclick="downloadPDF()">Download as PDF</button>
 
   <script>
     let listData = [];
 
-    // Get list from query parameter ?data=item1,item2,item3
+    // Get list from query parameter: ?data=item1,item2,item3
     const params = new URLSearchParams(window.location.search);
     const dataParam = params.get("data");
     if (dataParam) {
       listData = decodeURIComponent(dataParam).split(",");
     }
 
-    // Show the list
+    // Display the list
     const listElement = document.getElementById("list");
     if (listData.length > 0) {
       listElement.textContent = listData.join("\n");
     }
 
-    // Download as txt
-    function downloadList() {
-      const blob = new Blob([listData.join("\n")], { type: "text/plain" });
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = "list.txt";
-      link.click();
+    // Download as PDF using jsPDF
+    async function downloadPDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      // Format and add list to PDF
+      const text = listData.join("\n");
+      doc.text(text, 10, 10);
+
+      // Save the PDF
+      doc.save("list.pdf");
     }
   </script>
 </body>
 </html>
-No content provided
