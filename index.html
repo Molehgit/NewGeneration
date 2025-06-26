@@ -1,47 +1,77 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Thunkable List Viewer</title>
+  <title>Fabric Order Viewer</title>
   <meta charset="UTF-8">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
     body { font-family: sans-serif; padding: 20px; }
-    #list { margin-top: 20px; }
+    pre, table { font-size: 14px; }
     button { margin-top: 20px; }
   </style>
 </head>
 <body>
-  <h1>Received List</h1>
-  <pre id="list">Waiting for data...X</pre>
-  <button onclick="downloadPDF()">Download as PDF</button>
+  <h1>Fabric Order</h1>
+  <div id="pdf-preview"></div>
+  <button onclick="downloadPDF()">Download PDF</button>
 
   <script>
-    let listData = [];
-
-    // Get list from query parameter: ?data=item1,item2,item3
     const params = new URLSearchParams(window.location.search);
-    const dataParam = params.get("data");
-    if (dataParam) {
-      listData = decodeURIComponent(dataParam).split(",");
+    const order = params.get("order") || "************";
+    const date = params.get("date") || "************";
+
+    let dataList = [];
+    try {
+      dataList = JSON.parse(decodeURIComponent(params.get("data") || "[]"));
+    } catch (e) {
+      alert("Data parse error");
     }
 
-    // Display the list
-    const listElement = document.getElementById("list");
-    if (listData.length > 0) {
-      listElement.textContent = listData.join("\n");
-    }
-
-    // Download as PDF using jsPDF
     async function downloadPDF() {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF();
+      let y = 10;
 
-      // Format and add list to PDF
-      const text = listData.join("\n");
-      doc.text(text, 10, 10);
+      doc.setFontSize(12);
+      doc.text(`Order: ${order}`, 10, y);
+      doc.text(`Date: ${date}`, 150, y, { align: "right" });
 
-      // Save the PDF
-      doc.save("list.pdf");
+      y += 10;
+      doc.text("Description:", 10, y);
+      y += 8;
+      doc.text("Notes:", 10, y);
+
+      y += 15;
+      doc.setFont("Helvetica", "bold");
+      doc.text("Fabric", 10, y);
+      doc.text("Color", 50, y);
+      doc.text("Color Ref.", 100, y);
+      doc.text("QTY", 150, y);
+      doc.setFont("Helvetica", "normal");
+
+      y += 5;
+      doc.line(10, y, 200, y); // line under header
+      y += 5;
+
+      let totalQty = 0;
+      for (let row of dataList) {
+        if (y > 280) { doc.addPage(); y = 10; }
+        doc.text(row[0], 10, y);
+        doc.text(row[1], 50, y);
+        doc.text(row[2], 100, y);
+        doc.text(row[3], 150, y);
+        totalQty += parseFloat(row[3]) || 0;
+        y += 8;
+      }
+
+      y += 5;
+      doc.line(10, y, 200, y); // bottom line
+      y += 10;
+      doc.setFont("Helvetica", "bold");
+      doc.text("Total:", 130, y);
+      doc.text(`${totalQty}`, 150, y);
+
+      doc.save(`order_${order}.pdf`);
     }
   </script>
 </body>
